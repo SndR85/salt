@@ -3,6 +3,7 @@
 """
 
 
+from requests.models import Response
 from salt.cloud.clouds import proxmox
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.mock import ANY, MagicMock, patch
