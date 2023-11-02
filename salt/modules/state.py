@@ -145,7 +145,7 @@ def _snapper_pre(opts, jid):
             snapper_pre = __salt__["snapper.create_snapshot"](
                 config=__opts__.get("snapper_states_config", "root"),
                 snapshot_type="pre",
-                description="Salt State run for jid {}".format(jid),
+                description=f"Salt State run for jid {jid}",
                 __pub_jid=jid,
             )
     except Exception:  # pylint: disable=broad-except
@@ -164,7 +164,7 @@ def _snapper_post(opts, jid, pre_num):
                 config=__opts__.get("snapper_states_config", "root"),
                 snapshot_type="post",
                 pre_number=pre_num,
-                description="Salt State run for jid {}".format(jid),
+                description=f"Salt State run for jid {jid}",
                 __pub_jid=jid,
             )
     except Exception:  # pylint: disable=broad-except
@@ -587,7 +587,7 @@ def template(tem, queue=None, **kwargs):
             raise CommandExecutionError("Pillar failed to render", info=errors)
 
         if not tem.endswith(".sls"):
-            tem = "{sls}.sls".format(sls=tem)
+            tem = f"{tem}.sls"
         high_state, errors = st_.render_state(
             tem, kwargs.get("saltenv", ""), "", None, local=True
         )
@@ -882,7 +882,7 @@ def request(mods=None, **kwargs):
         try:
             if salt.utils.platform.is_windows():
                 # Make sure cache file isn't read-only
-                __salt__["cmd.run"]('attrib -R "{}"'.format(notify_path))
+                __salt__["cmd.run"](f'attrib -R "{notify_path}"')
             with salt.utils.files.fopen(notify_path, "w+b") as fp_:
                 salt.payload.dump(req, fp_)
         except OSError:
@@ -944,7 +944,7 @@ def clear_request(name=None):
             try:
                 if salt.utils.platform.is_windows():
                     # Make sure cache file isn't read-only
-                    __salt__["cmd.run"]('attrib -R "{}"'.format(notify_path))
+                    __salt__["cmd.run"](f'attrib -R "{notify_path}"')
                 with salt.utils.files.fopen(notify_path, "w+b") as fp_:
                     salt.payload.dump(req, fp_)
             except OSError:
@@ -1214,7 +1214,7 @@ def sls(
     queue=None,
     sync_mods=None,
     state_events=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Execute the states in one or more SLS files
@@ -1413,7 +1413,7 @@ def sls(
 
     for module_type in sync_mods:
         try:
-            __salt__["saltutil.sync_{}".format(module_type)](saltenv=opts["saltenv"])
+            __salt__[f"saltutil.sync_{module_type}"](saltenv=opts["saltenv"])
         except KeyError:
             log.warning("Invalid custom module type '%s', ignoring", module_type)
 
@@ -1489,12 +1489,15 @@ def sls(
             try:
                 if salt.utils.platform.is_windows():
                     # Make sure cache file isn't read-only
-                    __salt__["cmd.run"](["attrib", "-R", cache_file], python_shell=False)
+                    __salt__["cmd.run"](
+                        ["attrib", "-R", cache_file], python_shell=False
+                    )
                 with salt.utils.files.fopen(cache_file, "w+b") as fp_:
                     salt.payload.dump(ret, fp_)
             except OSError:
                 log.error(
-                    "Unable to write to SLS cache file %s. Check permission.", cache_file
+                    "Unable to write to SLS cache file %s. Check permission.",
+                    cache_file,
                 )
             _set_retcode(ret, high_)
             # Work around Windows multiprocessing bug, set __opts__['test'] back to
@@ -2342,10 +2345,10 @@ def pkg(pkg_path, pkg_sum, hash_type, test=None, **kwargs):
     members = s_pkg.getmembers()
     for member in members:
         if salt.utils.stringutils.to_unicode(member.path).startswith(
-            (os.sep, "..{}".format(os.sep))
+            (os.sep, f"..{os.sep}")
         ):
             return {}
-        elif "..{}".format(os.sep) in salt.utils.stringutils.to_unicode(member.path):
+        elif f"..{os.sep}" in salt.utils.stringutils.to_unicode(member.path):
             return {}
     s_pkg.extractall(root)
     s_pkg.close()
@@ -2423,9 +2426,9 @@ def disable(states):
     _changed = False
     for _state in states:
         if _state in _disabled_state_runs:
-            msg.append("Info: {} state already disabled.".format(_state))
+            msg.append(f"Info: {_state} state already disabled.")
         else:
-            msg.append("Info: {} state disabled.".format(_state))
+            msg.append(f"Info: {_state} state disabled.")
             _disabled_state_runs.append(_state)
             _changed = True
 
@@ -2473,9 +2476,9 @@ def enable(states):
     for _state in states:
         log.debug("_state %s", _state)
         if _state not in _disabled_state_runs:
-            msg.append("Info: {} state already enabled.".format(_state))
+            msg.append(f"Info: {_state} state already enabled.")
         else:
-            msg.append("Info: {} state enabled.".format(_state))
+            msg.append(f"Info: {_state} state enabled.")
             _disabled_state_runs.remove(_state)
             _changed = True
 
