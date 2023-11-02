@@ -4781,23 +4781,26 @@ class BaseHighState:
             return err
         if not high:
             return ret
-        with salt.utils.files.set_umask(0o077):
-            try:
-                if salt.utils.platform.is_windows():
-                    # Make sure cache file isn't read-only
-                    self.state.functions["cmd.run"](
-                        ["attrib", "-R", cfn],
-                        python_shell=False,
-                        output_loglevel="quiet",
-                    )
-                with salt.utils.files.fopen(cfn, "w+b") as fp_:
-                    try:
-                        salt.payload.dump(high, fp_)
-                    except TypeError:
-                        # Can't serialize pydsl
-                        pass
-            except OSError:
-                log.error('Unable to write to "state.highstate" cache file %s', cfn)
+        if not self.opts.get("create_state_cache", True):
+            log.info("State cache creation is disabled")
+        else:
+            with salt.utils.files.set_umask(0o077):
+                try:
+                    if salt.utils.platform.is_windows():
+                        # Make sure cache file isn't read-only
+                        self.state.functions["cmd.run"](
+                            ["attrib", "-R", cfn],
+                            python_shell=False,
+                            output_loglevel="quiet",
+                        )
+                    with salt.utils.files.fopen(cfn, "w+b") as fp_:
+                        try:
+                            salt.payload.dump(high, fp_)
+                        except TypeError:
+                            # Can't serialize pydsl
+                            pass
+                except OSError:
+                    log.error('Unable to write to "state.highstate" cache file %s', cfn)
 
         return self.state.call_high(high, orchestration_jid)
 

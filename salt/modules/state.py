@@ -1481,35 +1481,38 @@ def sls(
             st_.pop_active()
     if __salt__["config.option"]("state_data", "") == "terse" or kwargs.get("terse"):
         ret = _filter_running(ret)
-    cache_file = os.path.join(__opts__["cachedir"], "sls.p")
-    with salt.utils.files.set_umask(0o077):
-        try:
-            if salt.utils.platform.is_windows():
-                # Make sure cache file isn't read-only
-                __salt__["cmd.run"](["attrib", "-R", cache_file], python_shell=False)
-            with salt.utils.files.fopen(cache_file, "w+b") as fp_:
-                salt.payload.dump(ret, fp_)
-        except OSError:
-            log.error(
-                "Unable to write to SLS cache file %s. Check permission.", cache_file
-            )
-        _set_retcode(ret, high_)
-        # Work around Windows multiprocessing bug, set __opts__['test'] back to
-        # value from before this function was run.
-        __opts__["test"] = orig_test
+    if not __opts__.get("create_state_cache", True):
+        log.info("State cache creation is disabled")
+    else:
+        cache_file = os.path.join(__opts__["cachedir"], "sls.p")
+        with salt.utils.files.set_umask(0o077):
+            try:
+                if salt.utils.platform.is_windows():
+                    # Make sure cache file isn't read-only
+                    __salt__["cmd.run"](["attrib", "-R", cache_file], python_shell=False)
+                with salt.utils.files.fopen(cache_file, "w+b") as fp_:
+                    salt.payload.dump(ret, fp_)
+            except OSError:
+                log.error(
+                    "Unable to write to SLS cache file %s. Check permission.", cache_file
+                )
+            _set_retcode(ret, high_)
+            # Work around Windows multiprocessing bug, set __opts__['test'] back to
+            # value from before this function was run.
+            __opts__["test"] = orig_test
 
-        try:
-            with salt.utils.files.fopen(cfn, "w+b") as fp_:
-                try:
-                    salt.payload.dump(high_, fp_)
-                except TypeError:
-                    # Can't serialize pydsl
-                    pass
-        except OSError:
-            log.error(
-                "Unable to write to highstate cache file %s. Do you have permissions?",
-                cfn,
-            )
+            try:
+                with salt.utils.files.fopen(cfn, "w+b") as fp_:
+                    try:
+                        salt.payload.dump(high_, fp_)
+                    except TypeError:
+                        # Can't serialize pydsl
+                        pass
+            except OSError:
+                log.error(
+                    "Unable to write to highstate cache file %s. Do you have permissions?",
+                    cfn,
+                )
 
     _snapper_post(opts, kwargs.get("__pub_jid", "called localy"), snapper_pre)
     return ret
